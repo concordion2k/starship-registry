@@ -40,6 +40,7 @@ router.route('/starships')
                 starship.registry       = req.body.registry;
                 starship.class          = req.body.class;
                 starship.service_start  = req.body.service_start;
+                starship.officers       = req.body.officers;
 
                 starship.save((err) => {
                     if (err) {

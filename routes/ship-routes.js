@@ -7,7 +7,7 @@ const Starship      = require('./../models/starship/starship');
 const codes = constants.http_codes;
 
 router.get('/', (req, res) => {
-    res.json({ message: "Congrats! App works!" })
+    res.json({ message: "Congrats! App works!" });
 });
 
 router.route('/starships')
@@ -45,12 +45,13 @@ router.route('/starships')
                     if (err) {
                         res.status(codes.ERROR);
                         res.json(respBuilder("MongoDB Error.", err));
+                    } else {
+                        res.status(codes.ACCEPTED);
+                        res.json(respBuilder("Starship created!"));
                     }
-                    res.status(codes.ACCEPTED);
-                    res.json(respBuilder("Starship created!"));
                 })
             }
-        })
+        });
     });
 
 router.route('/starships/:registry')
@@ -73,8 +74,41 @@ router.route('/starships/:registry')
             }
         });
     })
+    // Edit a ship
     .put((req, res) => {
 
+        const reg   = req.params.registry;
+        const input = req.body;
+        // Find the ship
+        Starship.findOne({ registry: reg }, (err, ship) => {
+            if (err) {
+                res.status(codes.ERROR);
+                res.json(respBuilder("MongoDB Error.", err));
+            } else {
+                if (ship == null) {
+                    res.status(codes.NOT_FOUND);
+                    res.json(respBuilder("A ship with registry: " + reg + " does not exist."));
+                } else {
+                    // Edit the ship
+                    for (var shipprop in ship) {
+                        for (var inprop in input) {
+                            if (shipprop == inprop) {
+                                ship[inprop] = input[inprop];
+                            }
+                        }
+                    }
+                    ship.save((err) => {
+                        if (err) {
+                            res.status(codes.ERROR);
+                            res.json(respBuilder("MongoDB Error.", err));
+                        } else {
+                            res.status(codes.ACCEPTED);
+                            res.json(respBuilder("Starship with registry: " + reg + " updated!"));
+                        }
+                    });
+                }
+            }
+        });
     })
     // Remove a ship by its registry number
     .delete((req, res) => {

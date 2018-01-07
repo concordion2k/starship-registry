@@ -29,7 +29,8 @@ In the mongo terminal:
 
 ### Run Service
 
-`npm install -g nodemon`
-`nodemon server.js`
+`$ npm install -g nodemon`
+
+`$ nodemon server.js`
 
 Please feel free to chime in with comments!

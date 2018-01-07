@@ -1,0 +1,13 @@
+{
+  "name": "starship-api, a ship management tool.",
+  "version": "0.1.0",
+  "description": "A growing project to practice building RESTful services",
+  "dependencies": {
+    "body-parser": "^1.18.2",
+    "express": "^4.16.2",
+    "mongoose": "^5.0.0-rc2",
+    "redis": "^2.8.0",
+    "request": "^2.83.0",
+    "request-promise": "^4.2.2"
+  }
+}

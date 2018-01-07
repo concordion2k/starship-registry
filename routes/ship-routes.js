@@ -1,28 +1,38 @@
-const express = require('express');
-const router = express.Router();
-const Starship = require('./../models/starship/starship');
+const express       = require('express');
+const router        = express.Router();
+const respBuilder   = require('./../lib/responseBuilder');
+const constants     = require('./../lib/constants');
+const Starship      = require('./../models/starship/starship');
+
+const codes = constants.http_codes;
 
 router.get('/', (req, res) => {
     res.json({ message: "Congrats! App works!" })
 });
 
 router.route('/starships')
+    // Get all ships
     .get((req, res) => {
         Starship.find((err, starships) => {
             if (err) {
-                res.json({ status: "failure", error: err });
+                res.status(codes.ERROR);
+                res.json(respBuilder("MongoDB Error.", err));
             }
             res.json(starships);
         });
     })
+    // Add a ship
     .post((req, res) => {
-        Starship.count({ registry: req.body.registry }, (err, count) => {
+
+        const reg = req.body.registry;
+
+        Starship.count({ registry: reg }, (err, count) => {
             if (err) {
-                console.log(err);
+                res.json(respBuilder("MongoDB Error.", err));
             }
             if (count > 0) {
-                res.json({ status: "failure",
-                           error: "Starship with Registry " + req.body.registry + " already exists." });
+                res.status(codes.LOCKED);
+                res.json(respBuilder("Starship with Registry " + reg + " already exists.", "Duplicate-Ship"));
             } else {
                 var starship = new Starship();
 
@@ -33,24 +43,30 @@ router.route('/starships')
 
                 starship.save((err) => {
                     if (err) {
-                        res.json({ status: "failure", error: err });
+                        res.status(codes.ERROR);
+                        res.json(respBuilder("MongoDB Error.", err));
                     }
-                    res.json({ status: "success", error: null });
+                    res.status(codes.ACCEPTED);
+                    res.json(respBuilder("Starship created!"));
                 })
             }
         })
     });
 
 router.route('/starships/:registry')
+    // Get a ship by its registry number
     .get((req, res) => {
-        Starship.findOne({ registry: req.params.registry }, (err, ship) => {
+
+        const reg = req.params.registry;
+
+        Starship.findOne({ registry: reg }, (err, ship) => {
             if (err) {
-                res.send(err);
+                res.status(codes.ERROR);
+                res.json(respBuilder("MongoDB Error.", err));
             } else {
                 if (ship == null) {
-                    res.json({ status: "success",
-                               error: null,
-                               message: "A ship with registry: " + req.params.registry + " does not exist." });
+                    res.status(codes.NOT_FOUND);
+                    res.json(respBuilder("A ship with registry: " + reg + " does not exist."));
                 } else {
                     res.json(ship);
                 }
@@ -60,26 +76,38 @@ router.route('/starships/:registry')
     .put((req, res) => {
 
     })
+    // Remove a ship by its registry number
     .delete((req, res) => {
-        Starship.remove({
-            registry: req.params.registry
-        }, (err, ship) => {
+
+        const reg = req.params.registry;
+
+        Starship.findOne({ registry: reg }, (err, ship) => {
             if (err) {
-                res.json({ status: "failure", error: err });
+                res.status(codes.ERROR);
+                res.json(respBuilder("MongoDB Error.", err));
             } else {
                 if (ship == null) {
-                    res.json({ status: "success",
-                               error: null,
-                               message: "A ship with registry: " + req.params.registry + " does not exist." })
+                    res.status(codes.NOT_FOUND);
+                    res.json(respBuilder("A ship with registry: " + reg + " does not exist."));
                 } else {
-                    res.json({ status: "success",
-                               error: null,
-                               message: "Ship successfully removed from shipyard." });
+                    Starship.remove({
+                        registry: reg
+                    }, (err) => {
+                        if (err) {
+                            res.status(codes.ERROR);
+                            res.json(respBuilder("MongoDB Error.", err));
+                        } else {
+                            if (ship == null) {
+                                res.status(codes.NOT_FOUND);
+                                res.json(respBuilder("A ship with registry: " + reg + " does not exist."))
+                            } else {
+                                res.json(respBuilder("Ship successfully removed from shipyard."));
+                            }
+                        }
+                    });
                 }
             }
         });
-    })
-
-
+    });
 
 module.exports = router;
